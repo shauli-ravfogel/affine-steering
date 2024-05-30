@@ -98,7 +98,7 @@ if __name__  == "__main__":
     text_train, text_dev, text_test = load_bios()
     data = [text_train, text_dev, text_test]
     filenames = ["train", "dev", "test"]
-    output_path_template = "tweets_encodings/bios_{}_{}_pooling:{}_layer:{}.npy"
+    output_path_template = "bios_encodings/bios_{}_{}_pooling:{}_layer:{}.npy"
   elif args.data == "tweets":
     data = load_tweets()
     filenames = ["neg_neg", "neg_pos", "pos_neg", "pos_pos"]
