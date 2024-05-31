@@ -1,4 +1,4 @@
 ,dev_before,dev_after,test_before,test_after
 Mean+Covariance Matching,0.223,0.085,0.168,0.07
 Mean Matching,0.22,0.07,0.168,0.094
-LEACE,0.22,0.07,0.168,0.094
+LEACE,0.22,0.091,0.168,0.093
