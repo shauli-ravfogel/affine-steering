@@ -146,7 +146,7 @@ def get_predictions(clf, x):
     return y_pred.numpy()
 
 
-def fit_logistic_regression(x_train,y_train,x_dev,y_dev,x_test,y_test):
+def fit_logistic_regression(x_train,y_train,x_dev,y_dev,x_test,y_test, max_iter=30):
     import random
 
     random.seed(0)
@@ -156,10 +156,48 @@ def fit_logistic_regression(x_train,y_train,x_dev,y_dev,x_test,y_test):
 #                            n_jobs=32,alpha=1e-4)
     clf = LogisticRegression(warm_start = True, penalty = 'l2',
                         solver = "saga", multi_class = 'multinomial', fit_intercept = True,
-                        verbose = 5, n_jobs = 64, random_state = 1, max_iter = 30)
+                        verbose = 5, n_jobs = 64, random_state = 1, max_iter = max_iter)
     
     clf.fit(x_train, y_train)
     score_dev = clf.score(x_dev,y_dev)
     score_test = clf.score(x_test, y_test)
     
     return clf, score_dev, score_test
+
+
+
+def apply_steering(mlp, fitted_ot, h_train, h_dev, h_test, z_labels_train):
+    z_train_pred = mlp.predict(h_train)
+    z_dev_pred = mlp.predict(h_dev)
+    z_test_pred = mlp.predict(h_test)
+
+    x_dev_source = h_dev[z_dev_pred==0]
+    x_dev_target = h_dev[z_dev_pred==1]
+    x_test_source = h_test[z_test_pred==0]
+    x_test_target = h_test[z_test_pred==1]
+
+    train_x_transformed = h_train.copy()
+    dev_x_transformed = h_dev.copy()
+    test_x_transformed = h_test.copy()
+
+    # Mean+Covariance matching
+
+    x_train_source = h_train[z_labels_train==0]
+    x_train_target = h_train[z_labels_train==1]
+    train_x_transformed[z_labels_train==0] = fitted_ot.transform(Xs=x_train_source)
+    
+    dev_x_transformed[z_dev_pred==0] = fitted_ot.transform(Xs=x_dev_source)
+    test_x_transformed[z_test_pred==0] = fitted_ot.transform(Xs=x_test_source)
+
+    # Mean Matching
+
+    mean_diff_vec = x_train_target.mean(axis=0) - x_train_source.mean(axis=0)
+    train_x_transformed_steering = h_train.copy()
+    dev_x_transformed_steering = h_dev.copy()
+    test_x_transformed_steering = h_test.copy()
+
+    train_x_transformed_steering[z_labels_train==0] += mean_diff_vec
+    dev_x_transformed_steering[z_dev_pred==0] += mean_diff_vec
+    test_x_transformed_steering[z_test_pred==0] += mean_diff_vec
+
+    return (train_x_transformed, dev_x_transformed, test_x_transformed), (train_x_transformed_steering, dev_x_transformed_steering, test_x_transformed_steering)
